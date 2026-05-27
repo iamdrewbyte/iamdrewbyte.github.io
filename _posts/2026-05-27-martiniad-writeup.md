@@ -2,7 +2,7 @@
 title: MartiniAD Writeup - HackSmarter Labs
 description: Detailed writeup for the MartiniAD Active Directory challenge from HackSmarter Labs.
 author: drewbyte
-date: 2026-05-27 00:00:00 +0800
+date: 2026-05-28 00:00:00 +0800
 categories: [writeup, lab]
 tags: [writeup, lab, activedirectory, kerberoasting, cobalt-strike, dcsync, password-reuse]
 image:
