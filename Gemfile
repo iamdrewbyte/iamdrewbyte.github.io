@@ -4,7 +4,7 @@ source "https://rubygems.org"
 
 gemspec
 
-gem "sass-embedded", "~> 1.83"
+gem "sass-embedded", "= 1.83.0"
 
 gem "html-proofer", "~> 5.0", group: :test
 
