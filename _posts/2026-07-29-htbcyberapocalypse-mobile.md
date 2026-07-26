@@ -2,7 +2,7 @@
 title: Mobile Category - HTB CyberApocalypse 2026
 description: Detailed writeup for the whole Mobile Category of Cyber Apocalypse 2026.
 author: drewbyte
-date: 2026-07-26 00:00:00 +0800
+date: 2026-07-29 00:00:00 +0800
 categories: [writeup, lab]
 tags: [writeup, lab]
 image:
@@ -190,10 +190,8 @@ print(unseal_registry(CarriedMark))
 ### Flag
 
 ```
-┌──(kali㉿DESKTOP-B2E2TUG)-[/mnt/c/Users/adm_consultant/Downloads/mobile_proofmark]
-└─$
-└─$ cd /mnt/c/Users/adm_consultant/Downloads/mobile_overstrike
-cat > solve_overstrike.py << 'EOF'
+┌──(kali㉿DESKTOP-B2E2TUG)-[/mnt/c/Users/adm_consultant/Downloads/mobile_overstrike]
+└─$ cat > solve_overstrike.py << 'EOF'
 import hashlib, struct
 MASK = (1 << 64) - 1
 
@@ -482,10 +480,8 @@ The matching seed prints the decrypted 28-byte certificate directly.
 ### Flag
 
 ```
-┌──(kali㉿DESKTOP-B2E2TUG)-[/mnt/c/Users/adm_consultant/Downloads/mobile_salt_crown]
-└─$
-└─$ cd /mnt/c/Users/adm_consultant/Downloads/mobile_proofmark
-cat > solve_proofmark.c << 'EOF'
+┌──(kali㉿DESKTOP-B2E2TUG)-[/mnt/c/Users/adm_consultant/Downloads/mobile_proofmark]
+└─$ cat > solve_proofmark.c << 'EOF'
 #include <stdio.h>
 #include <stdint.h>
 
@@ -895,6 +891,118 @@ for k in range(0, 9):
         out = try_sequence(combo, buckets)
         if all(32 <= b < 127 for b in out):
             print(combo, "HTB{" + out.decode() + "}")
+```
+
+Here is the full script:
+
+```
+#!/usr/bin/env python3
+"""
+Offline solver for SaltCrown's admit_bucket() native function.
+Usage: python3 solve_saltcrown.py /path/to/ashvault.dat
+"""
+import sys
+
+MASK32 = 0xFFFFFFFF
+
+def rol32(x, n):
+    x &= MASK32
+    n &= 31
+    if n == 0:
+        return x
+    return ((x << n) | (x >> (32 - n))) & MASK32
+
+def admit_bucket(rubbing: bytes, choke: int) -> int:
+    size = len(rubbing)
+    if size < 1:
+        return 0xFFFFFFFFFFFFFFFF
+
+    local_228 = [0] * 64
+
+    # Stage 1: build local_228[64] via FNV1a-like pairwise mixing over the rubbing bytes
+    for word_idx in range(64):
+        uVar5 = 0x811c9dc5
+        lVar7 = 0
+        iVar3 = word_idx
+        if size != 1:
+            limit = (size & MASK32) - (size & 1)
+            while limit != lVar7:
+                b0 = rubbing[lVar7]
+                b1 = rubbing[lVar7 + 1]
+                uVar5 = (((b0 + iVar3) & MASK32) ^ uVar5)
+                uVar5 = (uVar5 * 0x1000193) & MASK32
+                term = (uVar5 >> 0xb) ^ (((b1 + iVar3) & MASK32) ^ uVar5)
+                uVar5 = (term * 0x1000193) & MASK32
+                uVar5 = ((uVar5 >> 0xb) ^ uVar5) & MASK32
+                lVar7 += 2
+        if (size & 1) != 0:
+            b0 = rubbing[lVar7]
+            uVar5 = ((((b0 + iVar3) & MASK32) ^ uVar5) * 0x1000193) & MASK32
+            uVar5 = ((uVar5 >> 0xb) ^ uVar5) & MASK32
+        local_228[word_idx] = uVar5
+
+    # Stage 2: 4096 rounds of mixing (XXTEA-golden-ratio-constant style)
+    local_128 = [0] * 64
+    iVar8 = 0
+    MULT1 = (0x100000000 - 0x7a143589) & MASK32  # unsigned form of -0x7a143589
+    MULT2 = (0x100000000 - 0x3d4d51c3) & MASK32  # unsigned form of -0x3d4d51c3
+
+    for _round in range(0x1000):
+        lVar2 = 0
+        while True:
+            lVar4 = lVar2 + 1
+            uVar6 = local_228[lVar2]
+
+            idxA = lVar4 & 0x3f
+            A = (rol32(local_228[idxA], 0x1b) | (local_228[idxA] >> 5)) & MASK32
+
+            idxB = (lVar2 - 1) & 0x3f
+            B = (rol32(local_228[idxB], 7) | (local_228[idxB] >> 0x19)) & MASK32
+
+            uVar5 = ((A ^ B) ^ uVar6) & MASK32
+            uVar5 = (uVar5 * MULT1) & MASK32
+            uVar5 = (uVar5 + iVar8 + lVar2) & MASK32
+
+            rotated = rol32(uVar6, 0xd)
+            mixpart = ((uVar5 >> 0xf) ^ uVar5) & MASK32
+            uVar6new = (rotated ^ ((mixpart * MULT2) & MASK32)) & MASK32
+
+            local_128[lVar2] = uVar6new
+
+            lVar2 = lVar4
+            if lVar4 == 0x40:
+                break
+
+        local_228 = local_128[:]
+        iVar8 = (iVar8 - 0x61c88647) & MASK32
+
+    idx1 = (choke * 0x17 + 0x29) & 0x3f
+    idx2 = (choke * 7 + 3) & 0x3f
+    val1 = local_128[idx1]
+    uVar6 = (rol32(val1, 0xb) | (val1 >> 0x15)) & MASK32
+    uVar6 ^= local_128[idx2]
+    uVar1 = (uVar6 >> 5) ^ (uVar6 >> 0xd)
+    return uVar1 & 0xff
+
+
+if __name__ == "__main__":
+    if len(sys.argv) < 2:
+        print("Usage: python3 solve_saltcrown.py /path/to/ashvault.dat")
+        sys.exit(1)
+
+    with open(sys.argv[1], "rb") as f:
+        rub = f.read()
+
+    print(f"Rubbing file size: {len(rub)} bytes")
+    buckets = []
+    for choke in range(8):
+        b = admit_bucket(rub, choke)
+        buckets.append(b)
+        print(f"choke {choke} -> bucket {b}")
+
+    print()
+    print("All buckets:", buckets)
+    
 ```
 
 ### Flag
