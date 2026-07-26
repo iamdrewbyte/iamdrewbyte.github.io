@@ -11,13 +11,13 @@ image:
 pin: false
 ---
 
-# HTB Cyber Apocalypse — Mobile Track Writeup
+# HTB Cyber Apocalypse - Mobile Track Writeup
 
 **Challenges:** Overstrike (easy) · Proofmark (medium) · SaltCrown (hard)
 
-![Mobile category](img/00_scoreboard.png)
+![Mobile category](/assets/img/00_scoreboard.png){: .mx-auto .shadow .rounded-10 w="800" }
 
-All three are **Godot-engine Android games**. None of them are really "games" — each one hides a
+All three are **Godot-engine Android games**. None of them are really "games" - each one hides a
 cryptographic check that decides whether you win, and the intended solve is to find that check,
 understand its math, and then either invert it or compute the answer directly.
 
@@ -37,19 +37,19 @@ The same three-step shape applies to all three:
 You play a character carrying a "Mark." The world has a "True Seal." The game constantly takes your
 Mark, runs it through a scrambler, and checks whether the scrambled result equals the True Seal.
 
-![Registry HUD](img/02_ov_registry_hud.png)
+![Registry HUD](/assets/img/02_ov_registry_hud.png){: .mx-auto .shadow .rounded-10 w="800" }
 
 The trick: the scrambler the game uses is a **well-known public algorithm that can be run backwards**.
 So instead of hunting for the right Mark, you take the answer the game wants, run the scrambler in
 reverse, and it hands you the exact Mark you need. Then a second function uses that Mark as a
-decryption key to reveal the flag — and since we now know the Mark, we can just run that decryption
+decryption key to reveal the flag - and since we now know the Mark, we can just run that decryption
 ourselves on our own machine. The game never needs to be played.
 
 ---
 
 ## Proof of Concept (Technical)
 
-### Step 1 — Identify the runtime
+### Step 1 - Identify the runtime
 
 `apktool d Overstrike.apk` shows this is a **Godot Mono (C#)** build. The `assets/scripts/*.cs` files
 on disk are empty stubs, but the compiled managed assembly is shipped intact:
@@ -58,13 +58,13 @@ on disk are empty stubs, but the compiled managed assembly is shipped intact:
 ./Overstrike/assets/.godot/mono/publish/arm64/Overstrike.dll
 ```
 
-So no native reversing needed — this opens cleanly in **ILSpy**.
+So no native reversing needed - this opens cleanly in **ILSpy**.
 
-![ILSpy class tree](img/03_ov_ilspy_tree.png)
+![ILSpy class tree](/assets/img/03_ov_ilspy_tree.png){: .mx-auto .shadow .rounded-10 w="800" }
 
 The class names match the empty stubs exactly: `Archive`, `BridgeBuilder`, `GameState`, `MarkPickup`, etc.
 
-### Step 2 — Read `GameState`
+### Step 2 - Read `GameState`
 
 ```csharp
 public ulong CarriedMark;
@@ -96,9 +96,9 @@ Converting those signed decimals to unsigned hex:
 | `-7723592293110705685` | `0x94D049BB133111EB` |
 
 Those are the **splitmix64** constants verbatim. splitmix64 is a bijection on 64-bit integers, so it
-has an exact inverse — no search required.
+has an exact inverse - no search required.
 
-### Step 3 — Confirm the intended path is impossible
+### Step 3 - Confirm the intended path is impossible
 
 `MarkPickup.cs` is how the Mark is supposed to grow:
 
@@ -118,7 +118,7 @@ private void OnBodyEntered(Node3D body)
 Small additive pickups can never reach a ~1.5×10¹⁹ target. The value must be reached by
 computation, not by play.
 
-### Step 4 — Invert splitmix64
+### Step 4 - Invert splitmix64
 
 Each stage is individually invertible: multiplications are odd (so invertible mod 2⁶⁴ via modular
 inverse), and `x ^= x >> k` unwinds by iterating.
@@ -158,9 +158,9 @@ Hex: 0xd7caad24dd98b676
 Forward check: 15682021040575554950 == TrueSeal? True
 ```
 
-### Step 5 — Decrypt the flag offline
+### Step 5 - Decrypt the flag offline
 
-`UnsealRegistry()` is a **pure function** of `CarriedMark` and a hardcoded 56-byte blob — a
+`UnsealRegistry()` is a **pure function** of `CarriedMark` and a hardcoded 56-byte blob - a
 SHA-256 counter-mode keystream XORed against `SealedRecord`. Nothing runtime-dependent, so it can be
 reimplemented directly:
 
@@ -194,7 +194,7 @@ print(unseal_registry(CarriedMark))
 HTB{0v3rstr1k3_r3cut_th3_w0rld_s34l_by_f0rg1ng_th3_mark}
 ```
 
-The flag text itself confirms the intended solution — *"re-cut the world seal by forging the mark."*
+The flag text itself confirms the intended solution - *"re-cut the world seal by forging the mark."*
 The emulator was never needed.
 
 ---
@@ -207,7 +207,7 @@ The emulator was never needed.
 You bring a self-made ring to an inspection anvil. The anvil is supposed to tell a genuine heirloom
 from a counterfeit. Your job is to make a fake it cannot distinguish.
 
-![Proofmark](img/10_proofmark_game.png)
+![Proofmark](/assets/img/10_proofmark_game.png){: .mx-auto .shadow .rounded-10 w="800" }
 
 This one hides its logic differently: the game scripts are readable, but they hand the actual
 decision off to a **compiled machine-code library**. Inside that library are two separate gates:
@@ -215,7 +215,7 @@ decision off to a **compiled machine-code library**. Inside that library are two
 1. Your ring's *measurements* must exactly match one hardcoded combination burned into the binary.
 2. Your ring's *stamp* must independently satisfy a second, much heavier check.
 
-The measurements can simply be read out of the binary as raw bytes. The stamp is harder — but we
+The measurements can simply be read out of the binary as raw bytes. The stamp is harder - but we
 never actually need it. The library's decryption routine is a tiny, fast function of a single 32-bit
 number, and we already know the answer starts with `HTB{`. So we try all four billion possibilities
 until one produces that prefix. That takes under a minute on a laptop.
@@ -224,7 +224,7 @@ until one produces that prefix. That takes under a minute on a laptop.
 
 ## Proof of Concept (Technical)
 
-### Step 1 — Locate the logic
+### Step 1 - Locate the logic
 
 `apktool` shows this is **plain GDScript** (`.gdc` bytecode, no C# assemblies). Decompiling the pack
 with **GDRE Tools** recovers the scripts. `ForgeClient.gd` is the giveaway:
@@ -246,7 +246,7 @@ func strike(state: PackedByteArray, hallmark: int) -> Array:
 The real work lives in `lib/x86_64/libproofmark.x86_64.so`, a GDExtension declared by
 `proofmark.gdextension` with entry symbol `proofmark_library_init`.
 
-And `GameState.gd` defines the state layout — four little-endian int32s:
+And `GameState.gd` defines the state layout - four little-endian int32s:
 
 ```gdscript
 var wards: PackedInt32Array = PackedInt32Array([0, 0, 0])
@@ -264,31 +264,31 @@ func snapshot() -> PackedByteArray:
     return buf
 ```
 
-### Step 2 — Find the bound methods in Ghidra
+### Step 2 - Find the bound methods in Ghidra
 
 Loading the `.so` and tracing `proofmark_library_init` → the initialize callback lands on the
 ClassDB registration block:
 
-![Method registration](img/11_pm_method_reg.png)
+![Method registration](/assets/img/11_pm_method_reg.png){: .mx-auto .shadow .rounded-10 w="800" }
 
 `reseal`, `submit` and `certificate` are registered here, each with a call-wrapper and a
 ptrcall-wrapper function pointer.
 
-### Step 3 — Follow `reseal` to its real implementation
+### Step 3 - Follow `reseal` to its real implementation
 
 The ptrcall wrapper for `reseal` (`FUN_00102bb0`) just re-packs the four int32 arguments back into a
-16-byte buffer — the identical layout `snapshot()` produces — and calls into the real routine:
+16-byte buffer - the identical layout `snapshot()` produces - and calls into the real routine:
 
-![reseal call](img/12_pm_reseal_call.png)
+![reseal call](/assets/img/12_pm_reseal_call.png){: .mx-auto .shadow .rounded-10 w="800" }
 
 `FUN_00101c10(&local_28, 0x10)` is the hash core. Internally it's a **custom bytecode-VM interpreter**
-running 100,000 iterations — deliberately painful to read statically.
+running 100,000 iterations - deliberately painful to read statically.
 
-### Step 4 — Read the acceptance condition
+### Step 4 - Read the acceptance condition
 
 Skipping the VM body and reading only its tail reveals the whole game:
 
-![Genuine vs forged branch](img/13_pm_genuine_branch.png)
+![Genuine vs forged branch](/assets/img/13_pm_genuine_branch.png){: .mx-auto .shadow .rounded-10 w="800" }
 
 ```c
 if (param_2 == 0x10) {
@@ -305,17 +305,17 @@ uVar7 = ((uVar7 >> 0xd) ^ uVar7) * -0x3d4d51cb;
 return (uVar7 >> 0x10) ^ uVar7 ^ 0xbadf00d;
 ```
 
-That last line is `bite == w0 + 2·w1 + 3·w2` — **exactly** the formula in `GameState.gd`. The binary
+That last line is `bite == w0 + 2·w1 + 3·w2` - **exactly** the formula in `GameState.gd`. The binary
 independently re-derives what a legitimate ring should look like. Note the `0xbadf00d` on the
 counterfeit path.
 
-### Step 5 — Extract the hardcoded target state
+### Step 5 - Extract the hardcoded target state
 
 `submit`'s real implementation (`FUN_001020d0`) opens with a 128-bit `MOVDQU`/`PXOR`/`PTEST` compare
-against `_DAT_00100530` — meaning the state buffer must match one specific hardcoded 16 bytes.
+against `_DAT_00100530` - meaning the state buffer must match one specific hardcoded 16 bytes.
 Reading them straight out of the data section:
 
-![Target state bytes](img/15_pm_target_state.png)
+![Target state bytes](/assets/img/15_pm_target_state.png){: .mx-auto .shadow .rounded-10 w="800" }
 
 ```
 00100530:  53 00 00 00   43 00 00 00   37 00 00 00   ce 01 00 00
@@ -323,12 +323,12 @@ Reading them straight out of the data section:
 ```
 
 Sanity check: `83 + 2·67 + 3·55 = 83 + 134 + 165 = 382`… which is **not** 462. The hardcoded state is
-deliberately *not* internally consistent — it is the forgery. *(The first three bytes also spell
-`S C 7` in ASCII — an author nod.)*
+deliberately *not* internally consistent - it is the forgery. *(The first three bytes also spell
+`S C 7` in ASCII - an author nod.)*
 
-### Step 6 — Read the certificate decryption
+### Step 6 - Read the certificate decryption
 
-![submit core](img/14_pm_submit_core.png)
+![submit core](/assets/img/14_pm_submit_core.png){: .mx-auto .shadow .rounded-10 w="800" }
 
 ```c
 iVar1 = 1200000;
@@ -350,7 +350,7 @@ if (local_38[0] == 0x7b425448) {         // little-endian ASCII "HTB{"
 
 `0x85ebca6b` / `0xc2b2ae35` are the MurmurHash3 32-bit finalizer constants (shown negated by Ghidra).
 
-### Step 7 — Confirm the state is correct, live
+### Step 7 - Confirm the state is correct, live
 
 Rather than trust static reading, hook the real library in the running process with **Frida** and
 call the two internals directly. Addresses were located by **byte-pattern scan** (Ghidra's displayed
@@ -376,7 +376,7 @@ var verdict  = submit(state, 0x10, hallmark, outbuf, 255);
 console.log("verdict:", verdict, "cert:", outbuf.readCString());
 ```
 
-![Frida hooks](img/17_pm_frida_hooks.png)
+![Frida hooks](/assets/img/17_pm_frida_hooks.png){: .mx-auto .shadow .rounded-10 w="800" }
 
 ```
 [*] reseal_core @ 0x76b15acd0c10
@@ -387,12 +387,12 @@ console.log("verdict:", verdict, "cert:", outbuf.readCString());
 [+] Verdict: 1
 ```
 
-Verdict moved from `0` (`REJECT_STATE`) to **`1` (`REJECT_TOKEN`)** — i.e. *"perfect face, wrong
+Verdict moved from `0` (`REJECT_STATE`) to **`1` (`REJECT_TOKEN`)** - i.e. *"perfect face, wrong
 spine."* The state is accepted as genuine; only the hallmark is wrong. This proves the extracted
-bytes are right, and proves `reseal()`'s output is **not** the hallmark `submit()` wants — the two
+bytes are right, and proves `reseal()`'s output is **not** the hallmark `submit()` wants - the two
 gates are independent.
 
-### Step 8 — Skip the hallmark entirely
+### Step 8 - Skip the hallmark entirely
 
 We do not actually need the hallmark. The keystream generator is a small deterministic function of a
 single 32-bit intermediate `M`, and we know the plaintext starts with `HTB{`. A 2³² search is
@@ -400,7 +400,7 @@ trivial in C.
 
 First dump the 28-byte table at `DAT_001006a0`:
 
-![Keystream table](img/16_pm_keystream_table.png)
+![Keystream table](/assets/img/16_pm_keystream_table.png){: .mx-auto .shadow .rounded-10 w="800" }
 
 ```
 2a 53 db 7b a3 5d 34 f5 5f 59 74 5e 00 43 88 1c
@@ -456,11 +456,11 @@ A crowd of the dead marches in lockstep to a city bell. You cannot fight them. I
 "shards" into narrow points along the street, timed to the bell's rhythm, to break their step and
 overload the bell until its counterfeit strike-plate cracks.
 
-![SaltCrown](img/20_saltcrown_launch.png)
+![SaltCrown](/assets/img/20_saltcrown_launch.png){: .mx-auto .shadow .rounded-10 w="800" }
 
 On paper this is a timing/skill challenge. In practice, reading the code reveals two shortcuts:
 
-- The flag depends only on **which** narrow points you jammed — **not** on how well you timed them.
+- The flag depends only on **which** narrow points you jammed - **not** on how well you timed them.
   The game re-looks-up the "correct" timing value at the end anyway.
 - Those "correct" timing values come from a compiled function whose only input is a **static 256-byte
   data file shipped inside the APK**. Nothing random, nothing runtime.
@@ -472,7 +472,7 @@ handful of possible jam-combinations until one decrypts to readable text. The ga
 
 ## Proof of Concept (Technical)
 
-### Step 1 — Identify the hybrid architecture
+### Step 1 - Identify the hybrid architecture
 
 SaltCrown is **both**: C# game logic in `SaltCrown.dll`, *plus* a native GDExtension.
 
@@ -487,7 +487,7 @@ entry_symbol = "saltcrown_library_init"
 compatibility_minimum = "4.7"
 ```
 
-### Step 2 — Read the C# mechanism
+### Step 2 - Read the C# mechanism
 
 `SaltCrownSpec` holds the sealed flag and the fold function (FNV-1a offset basis + FNV prime →
 this is FNV-1a with an extra avalanche):
@@ -528,7 +528,7 @@ private static uint Mix(uint h, uint v)
 }
 ```
 
-### Step 3 — Find what actually feeds `Measure`
+### Step 3 - Find what actually feeds `Measure`
 
 `Director.Forge()` runs the moment the strike-plate fractures:
 
@@ -550,7 +550,7 @@ private void Forge()
 ```
 
 **This is the critical observation.** The second argument is
-`Tolerances.PhaseBucket(item.ChokeIndex)` — freshly re-queried by index. It is **not**
+`Tolerances.PhaseBucket(item.ChokeIndex)` - freshly re-queried by index. It is **not**
 `item.BeddedPhase`, the phase you actually struck at. Your timing only decides *whether* a seat
 counts (`s.Bites`); it contributes nothing to the hash.
 
@@ -582,20 +582,20 @@ public static uint AdmitBucket(int choke)
 
 Its only inputs are a **static asset file** and an integer 0–7. Fully reproducible offline.
 
-### Step 4 — Locate `admit_bucket` in the native library
+### Step 4 - Locate `admit_bucket` in the native library
 
 Tracing `saltcrown_library_init` shows the usual godot-cpp bootstrap:
 
-![saltcrown_library_init](img/21_sc_libinit.png)
+![saltcrown_library_init](/assets/img/21_sc_libinit.png){: .mx-auto .shadow .rounded-10 w="800" }
 
 Rather than walk the whole registration chain, search the binary for the method name directly and
 follow its cross-reference:
 
-![admit_bucket string](img/22_sc_admit_string.png)
+![admit_bucket string](/assets/img/22_sc_admit_string.png){: .mx-auto .shadow .rounded-10 w="800" }
 
-This leads to **`FUN_0011dc30`** — the implementation.
+This leads to **`FUN_0011dc30`** - the implementation.
 
-### Step 5 — Read the algorithm
+### Step 5 - Read the algorithm
 
 ```c
 ulong FUN_0011dc30(undefined8 param_1, undefined8 param_2, int param_3)
@@ -613,7 +613,7 @@ ulong FUN_0011dc30(undefined8 param_1, undefined8 param_2, int param_3)
   ...
 ```
 
-![Stage 2 + extraction](img/23_sc_algo_stage2.png)
+![Stage 2 + extraction](/assets/img/23_sc_algo_stage2.png){: .mx-auto .shadow .rounded-10 w="800" }
 
 ```c
   // ---- Stage 2: 4096 rounds of neighbour-coupled mixing ----
@@ -636,15 +636,15 @@ ulong FUN_0011dc30(undefined8 param_1, undefined8 param_2, int param_3)
 }
 ```
 
-`0x61c88647` is the two's-complement form of the XXTEA/golden-ratio delta `0x9E3779B9` — this is an
+`0x61c88647` is the two's-complement form of the XXTEA/golden-ratio delta `0x9E3779B9` - this is an
 XXTEA-flavoured block permutation over 64 × 32-bit words.
 
-### Step 6 — Cross-check against raw disassembly (this step matters)
+### Step 6 - Cross-check against raw disassembly (this step matters)
 
 A first Python port produced garbage. The decompiler's C had folded a step away. Reading the raw
 loop body instead:
 
-![Round body assembly](img/24_sc_asm_round.png)
+![Round body assembly](/assets/img/24_sc_asm_round.png){: .mx-auto .shadow .rounded-10 w="800" }
 
 ```asm
 0011dd38  ROL   param_3,0x7                              ; rol(local_228[(i-1)&63], 7)
@@ -664,7 +664,7 @@ loop body instead:
 
 and then, immediately before the store:
 
-![Hidden xorshift](img/25_sc_asm_xorshift.png)
+![Hidden xorshift](/assets/img/25_sc_asm_xorshift.png){: .mx-auto .shadow .rounded-10 w="800" }
 
 ```asm
 0011dd5f  MOV   param_3,param_1+0x4
@@ -674,7 +674,7 @@ and then, immediately before the store:
 ```
 
 That final `x ^= x >> 16` avalanche is present in the machine code but easy to drop when
-transcribing from decompiled C. **Every one of 4096 × 64 iterations depends on it** — omit it and the
+transcribing from decompiled C. **Every one of 4096 × 64 iterations depends on it** - omit it and the
 output is noise.
 
 The tail extraction confirms the index math too:
@@ -695,7 +695,7 @@ The tail extraction confirms the index math too:
 0011ddd3  MOVZX EAX,CL             ; & 0xff
 ```
 
-### Step 7 — Extract the rubbing and reimplement offline
+### Step 7 - Extract the rubbing and reimplement offline
 
 ```bash
 $ ls -la SaltCrown/assets/rubbings/ashvault.dat
@@ -713,7 +713,7 @@ def admit_bucket(rubbing: bytes, choke: int) -> int:
     size = len(rubbing)
     local_228 = [0] * 64
 
-    # Stage 1 — FNV-1a variant, pairwise over the rubbing, seeded per word index
+    # Stage 1 - FNV-1a variant, pairwise over the rubbing, seeded per word index
     for word_idx in range(64):
         h, p = 0x811c9dc5, 0
         limit = (size & MASK32) - (size & 1)
@@ -728,7 +728,7 @@ def admit_bucket(rubbing: bytes, choke: int) -> int:
             h = ((h >> 0xb) ^ h) & MASK32
         local_228[word_idx] = h
 
-    # Stage 2 — 4096 rounds
+    # Stage 2 - 4096 rounds
     local_128 = [0] * 64
     delta = 0
     M1 = (0x100000000 - 0x7a143589) & MASK32
@@ -760,7 +760,7 @@ choke 6 -> bucket 62
 choke 7 -> bucket 188
 ```
 
-### Step 8 — Search the choke combinations
+### Step 8 - Search the choke combinations
 
 `Elric.SeatStock = 5`, and `Director` folds biting seats **ordered by `ChokeIndex`**. That is a tiny
 search space, so enumerate it and keep whatever decrypts to printable ASCII:
@@ -810,7 +810,7 @@ HTB{...}        # emitted by solve_saltcrown.py
   emulator at all; Proofmark used it only to *validate* a hypothesis before committing to an offline
   brute-force.
 - **Find the check, not the gameplay.** In every case the win condition was a pure function of a
-  small number of inputs, and the "skill" framing was a decoy — most explicitly in SaltCrown, where
+  small number of inputs, and the "skill" framing was a decoy - most explicitly in SaltCrown, where
   `Forge()` discards your actual timing and re-derives the expected value by index.
 - **Recognise stock constants.** `0x9E3779B9`, `0x85EBCA6B`, `0xC2B2AE35`, `0x01000193`,
   `0x811C9DC5` instantly identify splitmix64, MurmurHash3 and FNV-1a, which collapses "unknown custom
@@ -819,5 +819,5 @@ HTB{...}        # emitted by solve_saltcrown.py
   `x ^= x >> 16` that Ghidra's C reconstruction folded away. Decompiled C is a summary, not the
   program.
 - **Brute-force the small unknown.** Twice the winning move was refusing to reverse an expensive
-  function (1.2M rounds; 4096 rounds) and instead searching the tiny space around it — a 32-bit seed,
+  function (1.2M rounds; 4096 rounds) and instead searching the tiny space around it - a 32-bit seed,
   or a few thousand index combinations.
