@@ -2,11 +2,11 @@
 title: Mobile Category - HTB CyberApocalypse 2026
 description: Detailed writeup for the whole Mobile Category of Cyber Apocalypse 2026.
 author: drewbyte
-date: 2026-07-29 00:00:00 +0800
+date: 2026-07-26 00:00:00 +0800
 categories: [writeup, lab]
 tags: [writeup, lab]
 image:
-  path: /assets/img/samurai-after-day-5k-qs.jpg
+  path: /assets/img/header.png.webp
   alt: Mobile
 pin: false
 ---
