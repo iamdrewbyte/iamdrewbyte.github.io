@@ -6,7 +6,7 @@ date: 2026-07-26 00:00:00 +0800
 categories: [writeup, lab]
 tags: [writeup, lab]
 image:
-  path: /assets/img/header.png.webp
+  path: /assets/img/header2.webp
   alt: Mobile
 pin: false
 ---
@@ -27,7 +27,6 @@ The same three-step shape applies to all three:
 2. Read the exact math.
 3. Invert it, or brute-force the small unknown.
 
----
 ---
 
 # 1 · Overstrike
