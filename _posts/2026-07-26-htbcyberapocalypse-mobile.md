@@ -190,6 +190,47 @@ print(unseal_registry(CarriedMark))
 ### Flag
 
 ```
+┌──(kali㉿DESKTOP-B2E2TUG)-[/mnt/c/Users/adm_consultant/Downloads/mobile_proofmark]
+└─$
+└─$ cd /mnt/c/Users/adm_consultant/Downloads/mobile_overstrike
+cat > solve_overstrike.py << 'EOF'
+import hashlib, struct
+MASK = (1 << 64) - 1
+
+def inv_xorshift(z, shift):
+    x = z
+    for _ in range(64 // shift + 1):
+        x = z ^ (x >> shift)
+    return x & MASK
+
+C1, C2, C3 = 0x9e3779b97f4a7c15, 0xbf58476d1ce4e5b9, 0x94d049bb133111eb
+MOD = 1 << 64
+TrueSeal = 15682021040575554950
+
+z = inv_xorshift(TrueSeal, 31)
+z = (z * pow(C3, -1, MOD)) & MASK
+z = inv_xorshift(z, 27)
+z = (z * pow(C2, -1, MOD)) & MASK
+z = inv_xorshift(z, 30)
+mark = (z - C1) & MASK
+print("CarriedMark:", mark, hex(mark))
+
+SealedRecord = bytes([13,86,51,68,18,110,68,15,54,61,236,94,135,202,213,182,4,1,182,181,
+    150,228,184,126,121,224,236,220,7,82,153,251,179,104,0,87,32,34,3,60,
+    166,96,124,50,253,31,124,179,220,157,120,115,19,47,96,11])
+
+key = hashlib.sha256(struct.pack('<Q', mark)).digest()
+out = bytearray(len(SealedRecord)); n = ctr = 0
+while n < len(SealedRecord):
+    blk = hashlib.sha256(key + struct.pack('<i', ctr)).digest()
+    j = 0
+    while j < len(blk) and n < len(SealedRecord):
+        out[n] = SealedRecord[n] ^ blk[j]; j += 1; n += 1
+    ctr += 1
+print(''.join(chr(b) if 32 <= b < 127 else '?' for b in out))
+EOF
+python3 solve_overstrike.py
+CarriedMark: 15549431037298259574 0xd7caad24dd98b676
 HTB{0v3rstr1k3_r3cut_th3_w0rld_s34l_by_f0rg1ng_th3_mark}
 ```
 
@@ -197,7 +238,7 @@ The flag text itself confirms the intended solution - *"re-cut the world seal by
 The emulator was never needed.
 
 ---
----
+
 
 # 2 · Proofmark
 
@@ -441,7 +482,83 @@ The matching seed prints the decrypted 28-byte certificate directly.
 ### Flag
 
 ```
-HTB{...}        # emitted by solve_proofmark.c
+┌──(kali㉿DESKTOP-B2E2TUG)-[/mnt/c/Users/adm_consultant/Downloads/mobile_salt_crown]
+└─$
+└─$ cd /mnt/c/Users/adm_consultant/Downloads/mobile_proofmark
+cat > solve_proofmark.c << 'EOF'
+#include <stdio.h>
+#include <stdint.h>
+
+#define K1 0x85ebca6bU
+#define K2 0xc2b2ae35U
+#define ADD 0xc2b2ae35U
+
+static inline uint32_t f1(uint32_t x) { return ((x >> 16) ^ x) * K1; }
+static inline uint32_t f2(uint32_t x) { return ((x >> 13) ^ x) * K2; }
+static inline uint32_t f3(uint32_t x) { return  (x >> 16) ^ x;      }
+
+static const uint8_t table[28] = {
+    0x2a,0x53,0xdb,0x7b,0xa3,0x5d,0x34,0xf5,
+    0x5f,0x59,0x74,0x5e,0x00,0x43,0x88,0x1c,
+    0xa1,0x13,0x6f,0xb7,0xf8,0xd7,0x3f,0x79,
+    0xc1,0xb0,0xaf,0x1a
+};
+
+static int try_seed(uint32_t M, uint8_t *out) {
+    uint32_t s = M;
+    for (int i = 0; i < 28; i++) {
+        s = f1(s + ADD);
+        uint32_t y = f2(s);
+        s = f3(y);
+        out[i] = (uint8_t)(y >> 24) ^ table[i];
+    }
+    return out[0] == 'H' && out[1] == 'T' && out[2] == 'B' && out[3] == '{';
+}
+
+int main(void) {
+    uint8_t out[29];
+    uint64_t total = 1ULL << 32;
+    printf("sweeping %llu seeds...\n", (unsigned long long)total);
+    for (uint64_t m = 0; m < total; m++) {
+        if (try_seed((uint32_t)m, out)) {
+            out[28] = 0;
+            printf("\n[+] M = 0x%08x\n", (uint32_t)m);
+            printf("[+] plaintext: %s\n", out);
+        }
+        if ((m & 0x0FFFFFFF) == 0 && m)
+            printf("  %.0f%%\n", (double)m / total * 100.0);
+    }
+    printf("done.\n");
+    return 0;
+}
+EOF
+gcc -O3 -o solve solve_proofmark.c && ./solve
+sweeping 4294967296 seeds...
+  6%
+
+[+] M = 0x1c7c8990
+[+] plaintext: HTB{p3rf3ct_f4c3_tru3_sp1n3}
+  12%
+
+[+] M = 0x2bd302a4
+[+] plaintext: HTB{c��y�Zw护Ӗ�9�c���ſ?
+  19%
+  25%
+  31%
+  38%
+  44%
+  50%
+  56%
+  62%
+  69%
+  75%
+  81%
+  88%
+  94%
+done.
+
+
+HTB{p3rf3ct_f4c3_tru3_sp1n3}        # emitted by solve_proofmark.c
 ```
 
 ---
@@ -783,11 +900,42 @@ for k in range(0, 9):
 ### Flag
 
 ```
-HTB{...}        # emitted by solve_saltcrown.py
+┌──(kali㉿DESKTOP-B2E2TUG)-[/mnt/c/Users/adm_consultant/Downloads/mobile_salt_crown]
+└─$ python3 solve_saltcrown.py "SaltCrown/assets/rubbings/ashvault.dat"
+Rubbing file size: 256 bytes
+choke 0 -> bucket 149
+choke 1 -> bucket 84
+choke 2 -> bucket 104
+choke 3 -> bucket 178
+choke 4 -> bucket 26
+choke 5 -> bucket 6
+choke 6 -> bucket 101
+choke 7 -> bucket 234
+
+Brute-forcing choke sequences (0-8 biting seats, repeats allowed)...
+Checked 12870 combinations. Top 15 by printable-byte score:
+
+score=24/24 chokes=(3, 4, 5, 6, 7) -> HTB{p3rf3ct_f4c3_wr0ng_sp1n3}
+score=17/24 chokes=(0, 0, 4, 4, 6) -> HTB{yj3��r@<SP<L=dqCT>@���}
+score=17/24 chokes=(5, 5, 5, 5, 5, 7) -> HTB{V�J�jf��>I~G�twI�@T/�:4X}
+score=17/24 chokes=(0, 1, 2, 3, 6, 6, 6) -> HTB{,d_/a'��_��in Z+��c2u%�o}
+score=17/24 chokes=(0, 1, 2, 6, 6, 6, 7) -> HTB{k0�d8(�IK��zv un�r*!@��Y}
+score=17/24 chokes=(1, 1, 3, 5, 5, 6, 6) -> HTB{D3o�\��H'Lzv��2-�Frd5Ux}
+score=17/24 chokes=(3, 4, 4, 4, 6, 6, 7) -> HTB{:4Y_,��>U��Y)Yv:p]�+My}
+score=17/24 chokes=(0, 0, 2, 4, 5, 5, 5, 7) -> HTB{�C]�+S� I�z/UKVbZfs� 4}
+score=17/24 chokes=(0, 1, 2, 4, 4, 6, 7, 7) -> HTB{�=J�dVwRu {Lwh��iw��s1n�}
+score=17/24 chokes=(0, 2, 2, 2, 6, 7, 7, 7) -> HTB{<��cu[-@d[q25�db_g   %�U}
+oJgREd��lA�5��biM]�.|<}2, 2, 4, 4, 7) -> HTB{�
+score=16/24 chokes=(0, 0, 0, 1, 2, 4, 5) -> HTB0ou��P\H8Y��iv�d�jm[HB}
+score=16/24 chokes=(0, 1, 3, 4, 4, 4, 5) -> HTB{+�ck��iV~&�d��hA.+U;{�v}
+score=16/24 chokes=(0, 2, 5, 5, 6, 7, 7) -> HTB{~|\Z�(u�VHIt�q6�r�5DF}
+score=16/24 chokes=(1, 1, 3, 3, 3, 4, 7) -> HTB{g��E�,v�q~�y,CGp���O.?Mw}
+
+HTB{p3rf3ct_f4c3_wr0ng_sp1n3}       # emitted by solve_saltcrown.py
 ```
 
 ---
----
+
 
 # Scripts used
 
