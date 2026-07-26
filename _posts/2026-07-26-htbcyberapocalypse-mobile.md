@@ -8,7 +8,7 @@ tags: [writeup, lab]
 image:
   path: /assets/img/header2.webp
   alt: Mobile
-pin: false
+pin: true
 ---
 
 # HTB Cyber Apocalypse - Mobile Track Writeup
