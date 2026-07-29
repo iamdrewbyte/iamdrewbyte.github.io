@@ -2,7 +2,7 @@
 title: Mobile Category - HTB CyberApocalypse 2026
 description: Detailed writeup for the whole Mobile Category of Cyber Apocalypse 2026.
 author: drewbyte
-date: 2026-07-29 00:00:00 +0800
+date: 2026-07-29 21:00:00 +0800
 categories: [writeup, lab]
 tags: [writeup, lab]
 image:
@@ -1076,3 +1076,4 @@ HTB{p3rf3ct_f4c3_wr0ng_sp1n3}       # emitted by solve_saltcrown.py
 - **Brute-force the small unknown.** Twice the winning move was refusing to reverse an expensive
   function (1.2M rounds; 4096 rounds) and instead searching the tiny space around it - a 32-bit seed,
   or a few thousand index combinations.
+
