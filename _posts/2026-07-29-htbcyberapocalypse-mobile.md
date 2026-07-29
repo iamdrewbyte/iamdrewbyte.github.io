@@ -29,9 +29,9 @@ The same three-step shape applies to all three:
 
 ---
 
-# 1 · Overstrike
+## Overstrike
 
-## Summary 
+### Summary 
 
 You play a character carrying a "Mark." The world has a "True Seal." The game constantly takes your
 Mark, runs it through a scrambler, and checks whether the scrambled result equals the True Seal.
@@ -238,9 +238,9 @@ The emulator was never needed.
 ---
 
 
-# 2 · Proofmark
+## Proofmark
 
-## Summary 
+### Summary 
 
 You bring a self-made ring to an inspection anvil. The anvil is supposed to tell a genuine heirloom
 from a counterfeit. Your job is to make a fake it cannot distinguish.
@@ -560,9 +560,9 @@ HTB{p3rf3ct_f4c3_tru3_sp1n3}        # emitted by solve_proofmark.c
 ---
 ---
 
-# 3 · SaltCrown
+## SaltCrown
 
-## Summary 
+### Summary 
 
 A crowd of the dead marches in lockstep to a city bell. You cannot fight them. Instead you wedge
 "shards" into narrow points along the street, timed to the bell's rhythm, to break their step and
